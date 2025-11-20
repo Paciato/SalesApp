@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth as FacadesAuth;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
@@ -18,14 +20,9 @@ class LoginController extends Controller
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required'
-        ], [
-            'email.required' => 'Email harus diisi!',
-            'email.email' => 'Email tidak valid',
-            'password.required' => 'Password harus diisi'
         ]);
 
-        if (FacadesAuth::attempt($credentials)) {
-            // dd("berhasil login");
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');
         }
@@ -33,12 +30,32 @@ class LoginController extends Controller
         return back()->withErrors([
             'email' => 'Email atau password salah'
         ])->onlyInput('email');
-
-        // dd($request->all());
     }
 
-    public function logout(Request $request){
-        FacadesAuth::logout();
+    public function googleRedirect()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function googleCallback()
+    {
+        $googleUser = Socialite::driver('google')->user();
+
+        $user = User::firstOrCreate(
+            ['email' => $googleUser->getEmail()],
+            ['name' => $googleUser->getName()]
+        );
+
+        Auth::login($user);
+
+        if ($user->role === 'sales') return redirect('/dashboard');
+
+        return redirect('/dashboard');
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect('/');

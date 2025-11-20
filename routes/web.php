@@ -11,6 +11,10 @@ Route::get('/', function () {
 
 Route::post('/login', [LoginController::class, 'handleLogin'])->name('login')->middleware('guest');
 
+Route::get('/auth-google-redirect', [LoginController::class, 'googleRedirect']);
+Route::get('/auth-google-callback', [LoginController::class, 'googleCallback']);
+
+
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -25,4 +29,3 @@ Route::middleware('auth')->group(function () {
 
 Route::post('/order/{id}', [ProductController::class, 'order'])->name('product.order')->middleware('role:sales');
 Route::post('/approve/{id}', [ProductController::class, 'approve'])->name('product.approve')->middleware('role:admin');
-
